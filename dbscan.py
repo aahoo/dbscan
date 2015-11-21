@@ -18,8 +18,8 @@ def dbscan(mat, eps=.15, min_pts=2, report=False):
         print "Converting to dictionary",
         init_time = time()
 
-    # using raw data (indices and indptr attributes of csr_matrix) had 20x 
-    # performance boost compared to normal indexing/slicing/iteration.
+    # using raw data (indices and indptr attributes of csr_matrix) had around
+    # 30x performance boost compared to normal indexing/slicing/iteration.
     
     # keys are frozenset of the index of the nonzero entries of the matrix
     # rows. frozenset is hashable and can be used as the key unlike regular
