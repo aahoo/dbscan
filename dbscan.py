@@ -3,11 +3,11 @@ from time import gmtime, strftime, time
 from collections import Counter
 
 
-def dbscan(sparse_mat, eps=.15, min_pts=2, report=False):
+def dbscan(mat, eps=.15, min_pts=2, report=False):
     """
     Density-based spatial clustering of applications with noise (DBSCAN).
 
-    :param sparse_mat: Scipy sparse matrix format
+    :param mat: scipy csr_matrix format
     :param eps: distance epsilon
     :param min_pts: minimum number of points required to form a dense region
     :param report: en/disable measuring duration of each process and reporting
@@ -18,16 +18,17 @@ def dbscan(sparse_mat, eps=.15, min_pts=2, report=False):
         print "Converting to dictionary",
         init_time = time()
 
-    # converting to lil matrix and getting access to RAW data had 20x
-    # performance boost
-    data = sparse_mat.tolil()
-
+    # using raw data (indices and indptr attributes of csr_matrix) had 20x 
+    # performance boost compared to normal indexing/slicing/iteration.
+    
     # keys are frozenset of the index of the nonzero entries of the matrix
     # rows. frozenset is hashable and can be used as the key unlike regular
     # sets. values are the row index
     dictionary = {}
-    for i, row in enumerate(data.rows):
-        key = frozenset(row)
+    i = 0
+    for j in mat.indptr[1:]:
+        key = frozenset(mat.indices[i:j])
+        i = j
         if key in dictionary:
             dictionary[key].add(i)
         else:
@@ -64,7 +65,7 @@ def dbscan(sparse_mat, eps=.15, min_pts=2, report=False):
 
             # calculating proximity based on Jaccard distance
             intersection = len(keys[i] & keys[i_neibor])
-            # from math: len(a U b) = len(a) + len(b) - len(a I b)
+            # from math: a U b = a + b - a I b
             if 1 - 1.0 * intersection / (i_len + i_neibor_len - intersection) <= eps:
                 neighbors[i].append(i_neibor)
                 neighbors[i_neibor].append(i)
