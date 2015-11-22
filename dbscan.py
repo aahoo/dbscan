@@ -1,7 +1,5 @@
-
 from time import gmtime, strftime, time
 from collections import Counter
-
 
 def dbscan(mat, eps=.15, min_pts=2, report=False):
     """
@@ -18,21 +16,23 @@ def dbscan(mat, eps=.15, min_pts=2, report=False):
         print "Converting to dictionary",
         init_time = time()
 
-    # using raw data (indices and indptr attributes of csr_matrix) had around
-    # 30x performance boost compared to normal indexing/slicing/iteration.
-    
-    # keys are frozenset of the index of the nonzero entries of the matrix
-    # rows. frozenset is hashable and can be used as the key unlike regular
-    # sets. values are the row index
+    # @dictionary:
+    # - keys: frozenset of the index of the nonzero entries of the matrix rows
+    # - values: set of the row indices
+    # Note: frozenset is hashable and can be used as a key unlike regular python set.
+    # This is useful when obtaining the intersection in Jaccard Distance calculation.
     dictionary = {}
+
+    # Note: accessing raw data (indices and indptr attributes of csr_matrix) had 30x
+    # performance boost compared to normal indexing/slicing/iteration.
     i = 0
-    for j in mat.indptr[1:]:
+    for idx, j in enumerate(mat.indptr[1:]):
         key = frozenset(mat.indices[i:j])
         i = j
         if key in dictionary:
-            dictionary[key].add(i)
+            dictionary[key].add(idx)
         else:
-            dictionary[key] = set([i])
+            dictionary[key] = set([idx])
 
     # this is used later for optimizing construction of neighbors matrix
     lengths = Counter()
